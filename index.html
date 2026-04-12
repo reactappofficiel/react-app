@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RE•ACT — La vraie réaction</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--black:#080808;--red:#FF2D2D;--rdk:#CC0000;--white:#F4EFE6;--grey:#161616;--g2:#222;--muted:#666;--bdr:rgba(244,239,230,0.08);--grn:#22c55e}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+.page{display:none;min-height:100vh}.page.active{display:block}
+nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:rgba(8,8,8,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:4px;color:var(--white);cursor:pointer}.logo span{color:var(--red)}
+.nav-r{display:flex;align-items:center;gap:9px}
+.nav-u{font-size:.78rem;color:var(--muted)}
+.nbtn{background:var(--red);color:#fff;border:none;padding:9px 17px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:background .2s}
+.nbtn:hover{background:var(--rdk)}.nbtn.out{background:transparent;border:1px solid var(--bdr)}.nbtn.out:hover{border-color:var(--white);background:transparent}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;transition:all .2s}
+.br{background:var(--red);color:#fff}.br:hover{background:var(--rdk);transform:translateY(-1px)}.br:disabled{background:#444;color:#888;cursor:not-allowed;transform:none}
+.bo{background:transparent;color:var(--white);border:1px solid var(--bdr)}.bo:hover{border-color:var(--white)}
+.bfull{width:100%}
+.field{margin-bottom:19px}
+.field label{display:block;font-size:.66rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.field input,.field textarea{width:100%;background:var(--g2);border:1px solid var(--bdr);color:var(--white);padding:13px 14px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:300;outline:none;transition:border .2s}
+.field input:focus,.field textarea:focus{border-color:var(--red)}
+.field textarea{resize:vertical;min-height:80px}
+::placeholder{color:#444}
+/* FIX: pills scopées à #page-create uniquement via JS — le CSS reste générique */
+.pills{display:flex;flex-wrap:wrap;gap:7px}
+.pill{background:var(--g2);border:1px solid var(--bdr);color:var(--muted);padding:7px 13px;font-family:'DM Sans',sans-serif;font-size:.8rem;cursor:pointer;transition:all .15s}
+.pill.active{background:var(--red);border-color:var(--red);color:#fff}
+.upz{border:1px dashed rgba(244,239,230,.2);padding:36px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--grey);position:relative}
+.upz:hover{border-color:var(--red)}
+.upz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upz p{font-size:.83rem;color:var(--muted)}.upz strong{color:var(--white)}
+.vp{display:none;background:var(--g2);padding:13px;align-items:center;gap:13px}
+.vp.show{display:flex}
+.vp video{width:68px;height:50px;object-fit:cover;flex-shrink:0}
+.vpi{flex:1;overflow:hidden}.vpi strong{font-size:.8rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vpi span{font-size:.7rem;color:var(--muted)}
+.rbtn{background:none;border:none;color:var(--red);cursor:pointer;font-size:1.3rem;flex-shrink:0}
+.bb{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.86rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0;margin-bottom:26px;transition:color .2s}
+.bb:hover{color:var(--white)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--g2);color:var(--white);padding:11px 22px;font-size:.85rem;border-left:3px solid var(--red);z-index:9999;transition:transform .3s;white-space:nowrap;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0)}.toast.ok{border-color:var(--grn)}
+.spin-w{display:flex;align-items:center;justify-content:center;padding:40px}
+.spinner{width:30px;height:30px;border:3px solid var(--bdr);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* HOME */
+#page-home{padding-top:68px}
+.hero{min-height:calc(100vh - 68px);display:flex;flex-direction:column;justify-content:center;padding:48px 18px 38px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 75% 50%,rgba(255,45,45,.1),transparent 70%);pointer-events:none}
+.eyebrow{font-size:.66rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:15px}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,11vw,7rem);line-height:.92;letter-spacing:1px;margin-bottom:22px}
+.hero h1 em{font-style:normal;color:var(--red);display:block}
+.hero-sub{font-size:.97rem;color:var(--muted);max-width:370px;line-height:1.7;margin-bottom:34px;font-weight:300}
+.hbtns{display:flex;gap:10px;flex-wrap:wrap}
+.tw{margin-top:46px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);padding:10px 0;overflow:hidden;white-space:nowrap}
+.tt{display:inline-block;animation:tick 22s linear infinite}
+.tt span{font-size:.66rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding:0 26px}
+.tt .dt{color:var(--red);padding:0}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.sec{padding:66px 18px;max-width:940px;margin:0 auto}
+.slbl{font-size:.66rem;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:34px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:2px}
+.step{background:var(--grey);padding:26px 20px}
+.stn{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;color:rgba(255,45,45,.18);line-height:1;margin-bottom:9px}
+.step h3{font-size:.9rem;font-weight:600;margin-bottom:6px}.step p{font-size:.8rem;color:var(--muted);line-height:1.6;font-weight:300}
+.qb{background:var(--red);padding:52px 18px;text-align:center}
+.qb blockquote{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,5vw,2.8rem);letter-spacing:1px;line-height:1.2;max-width:620px;margin:0 auto}
+/* AUTH */
+#page-login,#page-signup{padding:94px 18px 56px;max-width:420px;margin:0 auto}
+#page-login h2,#page-signup h2{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:2px;margin-bottom:5px}
+.asub{color:var(--muted);font-size:.86rem;margin-bottom:32px;font-weight:300}
+.asw{text-align:center;margin-top:18px;font-size:.83rem;color:var(--muted)}
+.asw button{background:none;border:none;color:var(--red);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.83rem;text-decoration:underline}
+/* DASHBOARD */
+#page-dashboard{padding:84px 18px 56px;max-width:660px;margin:0 auto}
+.dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:10px}
+.dh h2{font-family:'Bebas Neue',sans-serif;font-size:1.75rem;letter-spacing:2px}
+.pb{display:inline-block;font-size:.62rem;letter-spacing:2px;text-transform:uppercase;padding:3px 7px;font-weight:600}
+.pf{background:var(--g2);color:var(--muted)}.pp{background:#1a1a3e;color:#818cf8}.pro{background:#1a0a0a;color:var(--red)}
+.qi{background:var(--grey);padding:15px 17px;margin-bottom:24px}
+.qi p{font-size:.8rem;color:var(--muted);margin-bottom:5px}.qi strong{color:var(--white)}
+.qbar{background:var(--g2);height:4px;margin-top:5px}.qfill{background:var(--red);height:4px;transition:width .3s}
+.rl{display:flex;flex-direction:column;gap:2px}
+.ri{background:var(--grey);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background .2s}
+.ri:hover{background:var(--g2)}
+.rth{width:58px;height:42px;background:#000;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.rin{flex:1;overflow:hidden}.rin strong{font-size:.88rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rin span{font-size:.72rem;color:var(--muted)}
+.rc{font-size:.75rem;color:var(--muted);flex-shrink:0;text-align:right}.rc strong{display:block;font-size:1.05rem;color:var(--white)}
+.es{text-align:center;padding:56px 18px;color:var(--muted)}.es .ei{font-size:2.8rem;margin-bottom:14px}.es p{font-size:.88rem;line-height:1.6}
+/* CREATE */
+#page-create{padding:84px 18px 56px;max-width:560px;margin:0 auto}
+#page-create h2{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:2px;margin-bottom:5px}
+#page-create .sub{color:var(--muted);font-size:.86rem;margin-bottom:32px;font-weight:300}
+.upr{display:none;background:var(--g2);padding:14px;margin-top:10px}
+.upr p{font-size:.8rem;color:var(--muted);margin-bottom:7px}
+.pbar{background:var(--grey);height:4px}.pfill{background:var(--red);height:4px;width:0%;transition:width .3s}
+/* LINK */
+#page-link{padding:84px 18px 56px;max-width:520px;margin:0 auto}
+.sc{width:66px;height:66px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.65rem;margin-bottom:22px;animation:pop .4s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+#page-link h2{font-family:'Bebas Neue',sans-serif;font-size:1.85rem;letter-spacing:2px;margin-bottom:5px}
+#page-link .sub{color:var(--muted);font-size:.86rem;margin-bottom:26px;font-weight:300}
+.lb{background:var(--g2);border:1px solid rgba(255,45,45,.3);padding:12px 14px;display:flex;align-items:center;gap:9px;margin-bottom:5px}
+#ld{flex:1;font-family:monospace;font-size:.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb{background:var(--red);color:#fff;border:none;padding:8px 13px;font-family:'DM Sans',sans-serif;font-size:.76rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+.cb:hover{background:var(--rdk)}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:16px}
+.sb{background:var(--grey);border:1px solid var(--bdr);color:var(--white);padding:12px 9px;font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.sb:hover{background:var(--g2);transform:translateY(-1px)}
+/* FIX: bouton "Voir mes réactions" en CSS propre, sans inline JS hover */
+.btn-ghost{width:100%;margin-top:18px;background:transparent;border:1px solid var(--bdr);color:var(--muted);padding:12px;font-family:'DM Sans',sans-serif;font-size:.86rem;cursor:pointer;transition:all .2s}
+.btn-ghost:hover{border-color:var(--white);color:var(--white)}
+/* WATCH */
+#page-watch{padding-top:0;background:#000}
+.wh{padding:56px 18px 22px;text-align:center;background:var(--black)}
+.wb{display:inline-block;background:var(--red);font-size:.6rem;letter-spacing:3px;text-transform:uppercase;padding:4px 9px;margin-bottom:11px}
+.wh h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,5vw,2.1rem);letter-spacing:1px;margin-bottom:6px}
+.wh p{color:var(--muted);font-size:.83rem;font-weight:300}
+.cw{max-width:440px;margin:0 auto;padding:26px 18px 46px}
+.cc{background:var(--grey);padding:26px 20px;text-align:center}
+.ci{font-size:2.1rem;margin-bottom:13px}
+.cc h3{font-size:1rem;font-weight:600;margin-bottom:9px}
+.cc p{color:var(--muted);font-size:.8rem;line-height:1.6;margin-bottom:20px;font-weight:300}
+.ck{display:flex;align-items:flex-start;gap:9px;text-align:left;margin-bottom:16px}
+.ck input{margin-top:3px;accent-color:var(--red);flex-shrink:0}
+.ck label{font-size:.78rem;color:var(--muted);line-height:1.5;cursor:pointer}
+#dv{display:none;position:relative;background:#000}
+#mv{width:100%;max-height:62vh;object-fit:contain;display:block;background:#000}
+.spp{position:absolute;bottom:13px;right:13px;width:96px;height:134px;border:2px solid var(--red);overflow:hidden;background:#111}
+#sv{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.rp{position:absolute;top:11px;left:11px;background:rgba(0,0,0,.75);padding:4px 9px;display:flex;align-items:center;gap:5px;font-size:.66rem;letter-spacing:2px}
+.rd{width:7px;height:7px;background:var(--red);border-radius:50%;animation:bl 1s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.sw{padding:16px 18px;text-align:center;background:var(--black);display:none}
+.sw p{font-size:.76rem;color:var(--muted);margin-top:7px}
+.ce{display:none;padding:14px 18px;background:#1a0000;border-left:3px solid var(--red);margin:10px 18px}
+.ce p{font-size:.8rem;color:#ffaaaa}
+.fw{display:none;padding:44px 18px;text-align:center}
+.fw.show{display:block}
+.fw h3{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:2px;margin-bottom:9px}
+.fw p{color:var(--muted);font-size:.86rem;font-weight:300}
+/* PLANS */
+#page-plans{padding:84px 18px 56px;max-width:660px;margin:0 auto}
+#page-plans h2{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;letter-spacing:2px;margin-bottom:5px}
+.pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:2px;margin-top:28px}
+.pc{background:var(--grey);padding:26px 18px}.pc.ft{background:var(--red)}
+.pc h3{font-size:.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
+.pc.ft h3{color:rgba(255,255,255,.7)}
+.pp2{font-family:'Bebas Neue',sans-serif;font-size:2.3rem;letter-spacing:1px;margin-bottom:3px}
+.pper{font-size:.76rem;color:var(--muted);margin-bottom:18px}
+.pc.ft .pper{color:rgba(255,255,255,.7)}
+.pfl{list-style:none}
+.pfl li{font-size:.8rem;color:var(--muted);padding:5px 0;border-bottom:1px solid var(--bdr);display:flex;gap:7px}
+.pc.ft .pfl li{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.15)}
+.pfl li::before{content:'✓';color:var(--grn);flex-shrink:0}
+.pc.ft .pfl li::before{color:#fff}
+.pbtn{width:100%;margin-top:18px;padding:11px;font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+@media(max-width:480px){nav{padding:11px 14px}.hero{padding:42px 14px 30px}.sec{padding:52px 14px}.hbtns{flex-direction:column}#page-create,#page-link,#page-dashboard,#page-login,#page-signup,#page-plans{padding:78px 14px 46px}}
+</style>
+</head>
+<body>
+
+<nav id="mn">
+  <div class="logo" onclick="goHome()">RE<span>•</span>ACT</div>
+  <div class="nav-r">
+    <span class="nav-u" id="nu"></span>
+    <button class="nbtn out" id="nab" onclick="goLogin()" style="display:none">Connexion</button>
+    <button class="nbtn" id="ncb" onclick="goDash()" style="display:none">Mes Reacts</button>
+    <button class="nbtn out" id="nlb" onclick="logout()" style="display:none">Déco</button>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <p class="eyebrow">La vraie réaction. Non filtrée.</p>
+    <h1>On ment<br>avec les mots.<em>Jamais avec<br>le visage.</em></h1>
+    <p class="hero-sub">Envoie une vidéo. Reçois la réaction sincère de tes proches — filmée en direct pendant qu'ils regardent.</p>
+    <div class="hbtns">
+      <button class="btn br" style="padding:15px 30px" onclick="goCreate()">🎬 Créer ma première React</button>
+      <button class="btn bo" style="padding:15px 26px" onclick="goPage('page-plans')">Voir les plans</button>
+    </div>
+    <div class="tw"><div class="tt">
+      <span>Annonce grossesse</span><span class="dt">✦</span><span>Défi bouche pleine</span><span class="dt">✦</span><span>Vidéo qui fait peur</span><span class="dt">✦</span><span>Surprise anniversaire</span><span class="dt">✦</span><span>Test pub marketing</span><span class="dt">✦</span><span>Révélation choc</span><span class="dt">✦</span>
+      <span>Annonce grossesse</span><span class="dt">✦</span><span>Défi bouche pleine</span><span class="dt">✦</span><span>Vidéo qui fait peur</span><span class="dt">✦</span><span>Surprise anniversaire</span><span class="dt">✦</span><span>Test pub marketing</span><span class="dt">✦</span><span>Révélation choc</span><span class="dt">✦</span>
+    </div></div>
+  </div>
+  <div class="sec">
+    <p class="slbl">Comment ça marche</p>
+    <div class="steps">
+      <div class="step"><div class="stn">01</div><h3>Tu uploades ta vidéo</h3><p>Fichier depuis ton téléphone ou ordi.</p></div>
+      <div class="step"><div class="stn">02</div><h3>Tu écris ton accroche</h3><p>Un défi, une consigne personnalisée.</p></div>
+      <div class="step"><div class="stn">03</div><h3>Tu envoies le lien</h3><p>WhatsApp, SMS, Instagram, Email.</p></div>
+      <div class="step"><div class="stn">04</div><h3>Tu reçois les réactions</h3><p>Filmées en direct. Sincères. Vraies.</p></div>
+    </div>
+  </div>
+  <div class="qb"><blockquote>On ment avec les mots.<br>Jamais avec le visage.</blockquote></div>
+  <div style="padding:56px 18px;text-align:center;border-top:1px solid var(--bdr)">
+    <button class="btn br" style="padding:17px 38px;font-size:1rem" onclick="goCreate()">🎬 Commencer gratuitement</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="page-login" class="page">
+  <button class="bb" onclick="goHome()">← Retour</button>
+  <h2>Connexion</h2>
+  <p class="asub">Accède à tes Reacts et réactions sauvegardées.</p>
+  <div class="field"><label>Email</label><input type="email" id="le" placeholder="ton@email.com"></div>
+  <div class="field"><label>Mot de passe</label><input type="password" id="lp" placeholder="••••••••"></div>
+  <button class="btn br bfull" style="padding:15px" onclick="login()">Se connecter →</button>
+  <div class="asw">Pas encore de compte ? <button onclick="goSignup()">Créer un compte</button></div>
+</div>
+
+<!-- SIGNUP -->
+<div id="page-signup" class="page">
+  <button class="bb" onclick="goHome()">← Retour</button>
+  <h2>Créer un compte</h2>
+  <p class="asub">Gratuit — 2 Reacts/mois, 3 envois par React.</p>
+  <div class="field"><label>Prénom / Pseudo</label><input type="text" id="sn" placeholder="Ton prénom"></div>
+  <div class="field"><label>Email</label><input type="email" id="se" placeholder="ton@email.com"></div>
+  <div class="field"><label>Mot de passe</label><input type="password" id="sp" placeholder="8 caractères minimum"></div>
+  <button class="btn br bfull" style="padding:15px" onclick="signup()">Créer mon compte →</button>
+  <div class="asw">Déjà un compte ? <button onclick="goLogin()">Se connecter</button></div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page">
+  <div class="dh">
+    <div><h2>Mes Reacts</h2><div id="dpb" class="pb pf">FREE</div></div>
+    <button class="btn br" style="padding:11px 20px;font-size:.88rem" onclick="goCreate()">+ Nouvelle React</button>
+  </div>
+  <div class="qi">
+    <p>Reacts ce mois : <strong id="qu">0</strong> / <strong id="qm">2</strong></p>
+    <div class="qbar"><div class="qfill" id="qf" style="width:0%"></div></div>
+    <p style="margin-top:7px">Pour plus, <button onclick="goPage('page-plans')" style="background:none;border:none;color:var(--red);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;text-decoration:underline">passe en Premium →</button></p>
+  </div>
+  <!-- FIX: spinner retiré du HTML statique, injecté dynamiquement dans loadDash() -->
+  <div id="rl" class="rl"></div>
+</div>
+
+<!-- CREATE -->
+<div id="page-create" class="page">
+  <button class="bb" onclick="goBack()">← Retour</button>
+  <h2>Nouvelle React</h2>
+  <p class="sub">Configure ta vidéo en 2 minutes</p>
+  <div class="field">
+    <label>Ta vidéo</label>
+    <div class="upz" id="uz">
+      <input type="file" accept="video/*" id="vi" onchange="handleVid(event)">
+      <div style="font-size:2.1rem;margin-bottom:9px">🎬</div>
+      <p><strong>Appuie ici pour choisir ta vidéo</strong></p>
+      <p style="margin-top:4px;font-size:.76rem">MP4, MOV, AVI — max 500MB</p>
+    </div>
+    <div class="vp" id="vp">
+      <video id="pv" muted></video>
+      <div class="vpi"><strong id="vn">-</strong><span id="vs">-</span></div>
+      <button class="rbtn" onclick="remVid()">✕</button>
+    </div>
+    <div class="upr" id="upr">
+      <p id="upr-label">Upload en cours... <span id="upr-pct">0%</span></p>
+      <div class="pbar"><div class="pfill" id="pf2"></div></div>
+    </div>
+  </div>
+  <div class="field">
+    <label>Thème</label>
+    <!-- FIX: id ajouté sur le conteneur pour scoper selPill() -->
+    <div class="pills" id="theme-pills">
+      <button class="pill" onclick="selPill(this)">😱 Peur</button>
+      <button class="pill" onclick="selPill(this)">🤰 Annonce</button>
+      <button class="pill" onclick="selPill(this)">💧 Défi</button>
+      <button class="pill" onclick="selPill(this)">🎁 Surprise</button>
+      <button class="pill" onclick="selPill(this)">😂 Humour</button>
+      <button class="pill" onclick="selPill(this)">📊 Pro</button>
+    </div>
+  </div>
+  <div class="field">
+    <label>Message d'accroche</label>
+    <textarea id="acc" placeholder="Ex : Mets de l'eau dans ta bouche et essaie de ne pas rigoler... 💀"></textarea>
+  </div>
+  <button class="btn br bfull" style="padding:16px;font-size:.97rem" id="gb" onclick="genLink()">Générer mon lien React →</button>
+</div>
+
+<!-- LINK -->
+<div id="page-link" class="page">
+  <!-- FIX: bouton Modifier utilise goPage() direct, sans passer par goCreate() qui vérifie le quota -->
+  <button class="bb" onclick="goPage('page-create')">← Modifier</button>
+  <div class="sc">✓</div>
+  <h2>Ta React est prête !</h2>
+  <p class="sub">Envoie ce lien — leurs réactions t'attendent.</p>
+  <div class="lb"><span id="ld">—</span><button class="cb" id="cpb" onclick="cpLink()">Copier</button></div>
+  <p style="font-size:.7rem;color:var(--muted);margin-bottom:16px">📌 Ce lien amène directement sur la page de réaction.</p>
+  <p style="font-size:.66rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:9px">Partager via</p>
+  <div class="sg">
+    <button class="sb" onclick="shWA()">📱 WhatsApp</button>
+    <button class="sb" onclick="shSMS()">💬 SMS</button>
+    <button class="sb" onclick="shIG()">📷 Instagram</button>
+    <button class="sb" onclick="shEM()">📧 Email</button>
+  </div>
+  <!-- FIX: hover géré en CSS via .btn-ghost, plus de inline onmouseover/onmouseout -->
+  <button class="btn-ghost" onclick="goDash()">Voir mes réactions →</button>
+</div>
+
+<!-- WATCH -->
+<div id="page-watch" class="page">
+  <div class="wh">
+    <div class="wb">React — Réaction en direct</div>
+    <h2 id="wt">Tu as reçu une vidéo !</h2>
+    <p id="ws">La personne veut voir ta vraie réaction 🎬</p>
+  </div>
+  <div class="cw" id="cs">
+    <div class="cc">
+      <div class="ci">📸</div>
+      <h3>On va te filmer pendant que tu regardes</h3>
+      <p>Ta caméra s'active dès le lancement. Ta réaction est enregistrée et envoyée à l'expéditeur. Tu arrêtes quand tu veux.</p>
+      <div class="ck">
+        <input type="checkbox" id="ccb" onchange="togC()">
+        <label for="ccb">J'accepte d'être filmé(e) et que ma réaction soit partagée avec l'expéditeur.</label>
+      </div>
+      <button class="btn br bfull" id="cbtn" onclick="startW()" style="padding:14px;font-size:.93rem;opacity:.4;cursor:not-allowed">▶ J'accepte — Lancer la vidéo</button>
+    </div>
+  </div>
+  <div id="dv">
+    <video id="mv" controls playsinline style="width:100%;max-height:62vh;object-fit:contain;display:block;background:#000"></video>
+    <div class="spp"><video id="sv" autoplay muted playsinline></video></div>
+    <div class="rp"><div class="rd"></div><span>REC</span></div>
+  </div>
+  <div class="ce" id="ce"><p>📵 <strong>Caméra non autorisée.</strong> Active la caméra dans les paramètres de ton navigateur.</p></div>
+  <div class="sw" id="sw">
+    <button class="btn br bfull" style="max-width:380px" onclick="stopR()">⏹ Arrêter l'enregistrement</button>
+    <p>La caméra continue après la vidéo — arrête quand tu veux.</p>
+  </div>
+  <div class="fw" id="fw">
+    <h3>Réaction enregistrée ! 🎉</h3>
+    <p>L'expéditeur sera notifié.<br>Merci d'avoir participé !</p>
+  </div>
+</div>
+
+<!-- PLANS -->
+<div id="page-plans" class="page">
+  <button class="bb" onclick="goBack()">← Retour</button>
+  <h2>Choisir un plan</h2>
+  <p style="color:var(--muted);font-size:.86rem;margin-bottom:6px;font-weight:300">Commence gratuitement. Upgrade quand tu veux.</p>
+  <div class="pg">
+    <div class="pc"><h3>Free</h3><div class="pp2">0€</div><div class="pper">Pour toujours</div><ul class="pfl"><li>2 Reacts par mois</li><li>3 envois par React</li><li>Stockage 7 jours</li><li>Dashboard inclus</li></ul><button class="pbtn" style="background:var(--g2);color:var(--white)" onclick="T('Tu es sur le plan Free !')">Plan actuel</button></div>
+    <div class="pc ft"><h3>Premium</h3><div class="pp2">5€</div><div class="pper">/mois</div><ul class="pfl"><li>Reacts illimitées</li><li>20 envois par React</li><li>Stockage illimité</li><li>Téléchargement</li></ul><button class="pbtn" style="background:#fff;color:#FF2D2D" onclick="T('Paiement Stripe bientôt disponible !')">Choisir Premium</button></div>
+    <div class="pc"><h3>Pro</h3><div class="pp2">29€</div><div class="pper">/mois</div><ul class="pfl"><li>Tout Premium</li><li>Envois illimités</li><li>Questionnaire post-visio</li><li>Dashboard analytique</li></ul><button class="pbtn" style="background:var(--red);color:#fff" onclick="T('Paiement Stripe bientôt disponible !')">Choisir Pro</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── SUPABASE ────────────────────────────────────────────────────────────────
+// SÉCURITÉ : La clé anon/publishable est inévitablement visible côté client.
+// Protège tes données en activant les Row Level Security (RLS) sur toutes tes
+// tables Supabase (reacts, reactions) — c'est la vraie barrière de sécurité.
+const SURL='https://haojleoenijrfhnteuge.supabase.co';
+const SKEY='sb_publishable_yhDi9hV_t8LOC5YuMmjTPA_YwDGzudT';
+const sb=supabase.createClient(SURL,SKEY);
+
+// ─── ÉTAT GLOBAL ─────────────────────────────────────────────────────────────
+let user=null,clink='',crid=null,acc='',cam=null,vfile=null,prev='page-home';
+let mediaRecorder=null,recordedChunks=[];
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function goPage(id){
+  prev=document.querySelector('.page.active')?.id||'page-home';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('mn').style.display=id==='page-watch'?'none':'flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goHome(){goPage('page-home')}
+// FIX: goBack() ne peut plus revenir sur page-watch par accident
+function goBack(){
+  const safe=['page-home','page-dashboard','page-create','page-login','page-signup','page-plans','page-link'];
+  goPage(safe.includes(prev)?prev:'page-home');
+}
+function goLogin(){goPage('page-login')}
+function goSignup(){goPage('page-signup')}
+function goDash(){goPage('page-dashboard');loadDash()}
+function goCreate(){
+  if(!user){goPage('page-signup');T('Crée un compte gratuit pour commencer !');return}
+  checkQ().then(ok=>{
+    if(ok)goPage('page-create');
+    else{T('Quota atteint — passe en Premium !',false);goPage('page-plans')}
+  })
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function T(m,ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=m;
+  t.className='toast'+(ok?' ok':'')+' show';
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+async function signup(){
+  const n=document.getElementById('sn').value.trim();
+  const e=document.getElementById('se').value.trim();
+  const p=document.getElementById('sp').value;
+  if(!n||!e||!p)return T('Remplis tous les champs',false);
+  if(p.length<8)return T('Mot de passe trop court (8 min)',false);
+  const{error}=await sb.auth.signUp({email:e,password:p,options:{data:{name:n}}});
+  if(error)return T(error.message,false);
+  T('Compte créé ! Vérifie ton email.');
+  goDash();
+}
+
+async function login(){
+  const e=document.getElementById('le').value.trim();
+  const p=document.getElementById('lp').value;
+  if(!e||!p)return T('Remplis tous les champs',false);
+  const{error}=await sb.auth.signInWithPassword({email:e,password:p});
+  if(error)return T('Email ou mot de passe incorrect',false);
+  T('Bienvenue !');goDash();
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  user=null;updNav(null);goHome();T('Déconnecté');
+}
+
+function updNav(u){
+  document.getElementById('nu').textContent=u?u.user_metadata?.name||u.email?.split('@')[0]||'':'';
+  document.getElementById('nab').style.display=u?'none':'block';
+  document.getElementById('ncb').style.display=u?'block':'none';
+  document.getElementById('nlb').style.display=u?'block':'none';
+}
+
+// ─── QUOTA ────────────────────────────────────────────────────────────────────
+async function checkQ(){
+  if(!user)return false;
+  if((user.user_metadata?.plan||'free')!=='free')return true;
+  const s=new Date();s.setDate(1);s.setHours(0,0,0,0);
+  const{count}=await sb.from('reacts').select('*',{count:'exact',head:true}).eq('user_id',user.id).gte('created_at',s.toISOString());
+  return(count||0)<2;
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+async function loadDash(){
+  if(!user){
+    // FIX: spinner retiré si non connecté — afficher un message à la place
+    document.getElementById('rl').innerHTML='<div class="es"><div class="ei">🔒</div><p>Connecte-toi pour voir tes Reacts.</p></div>';
+    return;
+  }
+  // FIX: afficher le spinner dynamiquement
+  document.getElementById('rl').innerHTML='<div class="spin-w"><div class="spinner"></div></div>';
+
+  const plan=user.user_metadata?.plan||'free';
+  const b=document.getElementById('dpb');
+  b.textContent=plan.toUpperCase();
+  b.className='pb '+(plan==='free'?'pf':plan==='premium'?'pp':'pro');
+
+  const s=new Date();s.setDate(1);s.setHours(0,0,0,0);
+  const{count:uc}=await sb.from('reacts').select('*',{count:'exact',head:true}).eq('user_id',user.id).gte('created_at',s.toISOString());
+  const used=uc||0,mx=plan==='free'?2:'∞';
+  document.getElementById('qu').textContent=used;
+  document.getElementById('qm').textContent=mx;
+  document.getElementById('qf').style.width=plan==='free'?Math.min(100,used/2*100)+'%':'20%';
+
+  const{data:rs}=await sb.from('reacts').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
+  const l=document.getElementById('rl');
+  if(!rs||!rs.length){
+    l.innerHTML='<div class="es"><div class="ei">🎬</div><p>Tu n\'as pas encore créé de React.<br>Lance ta première !</p></div>';
+    return;
+  }
+
+  // FIX: pour chaque React, on récupère le nombre de réactions réelles depuis la table "reactions"
+  // On fait une requête groupée pour ne pas faire N appels
+  const ids=rs.map(r=>r.id);
+  const{data:reactionCounts}=await sb.from('reactions').select('react_id').in('react_id',ids);
+  const countMap={};
+  if(reactionCounts){reactionCounts.forEach(r=>{countMap[r.react_id]=(countMap[r.react_id]||0)+1})}
+
+  l.innerHTML=rs.map(r=>{
+    const nb=countMap[r.id]||0;
+    return `<div class="ri" onclick="cpR('${r.id}')">
+      <div class="rth">${r.theme||'🎬'}</div>
+      <div class="rin">
+        <strong>${r.accroche||'Sans accroche'}</strong>
+        <span>${new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+      </div>
+      <div class="rc"><strong>${nb}</strong>réaction${nb>1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// FIX: lien basé sur href propre sans double slash potentiel
+function getBaseUrl(){return window.location.href.split('?')[0]}
+
+function cpR(id){
+  const lk=getBaseUrl()+'?react='+id;
+  navigator.clipboard.writeText(lk).then(()=>T('Lien copié !')).catch(()=>prompt('Lien :',lk));
+}
+
+// ─── CREATE ───────────────────────────────────────────────────────────────────
+function handleVid(e){
+  const f=e.target.files[0];
+  if(!f)return;
+  // FIX: validation taille côté client (500MB max)
+  if(f.size>500*1024*1024)return T('Vidéo trop lourde (max 500 MB)',false);
+  vfile=f;
+  document.getElementById('pv').src=URL.createObjectURL(f);
+  document.getElementById('vn').textContent=f.name;
+  document.getElementById('vs').textContent=(f.size/1024/1024).toFixed(1)+' MB';
+  document.getElementById('uz').style.display='none';
+  document.getElementById('vp').classList.add('show');
+}
+
+function remVid(){
+  vfile=null;
+  document.getElementById('vi').value='';
+  document.getElementById('pv').src='';
+  document.getElementById('uz').style.display='block';
+  document.getElementById('vp').classList.remove('show');
+}
+
+// FIX: selPill() scopé au conteneur #theme-pills uniquement
+function selPill(el){
+  document.querySelectorAll('#theme-pills .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function genLink(){
+  if(!user){goSignup();return}
+  if(!vfile)return T('Choisis une vidéo d\'abord !',false);
+  const btn=document.getElementById('gb');
+  btn.disabled=true;btn.textContent='Upload en cours...';
+  try{
+    acc=document.getElementById('acc').value.trim();
+    const theme=document.querySelector('#theme-pills .pill.active')?.textContent||'';
+    const ext=vfile.name.split('.').pop();
+    // FIX: nom de fichier sécurisé (sans espaces ni caractères spéciaux)
+    const fn=user.id+'/'+Date.now()+'.'+ext.toLowerCase();
+    document.getElementById('upr').style.display='block';
+    document.getElementById('pf2').style.width='10%';
+
+    const{error:ue}=await sb.storage.from('videos').upload(fn,vfile,{cacheControl:'3600',upsert:false});
+    if(ue)throw ue;
+
+    // FIX: barre de progression animée par étapes (upload => DB => génération)
+    document.getElementById('pf2').style.width='70%';
+    document.getElementById('upr-label').innerHTML='Création de ta React... <span id="upr-pct">80%</span>';
+
+    const{data:{publicUrl}}=sb.storage.from('videos').getPublicUrl(fn);
+    const{data:r,error:de}=await sb.from('reacts').insert({
+      user_id:user.id,
+      video_url:publicUrl,
+      accroche:acc,
+      theme,
+      send_count:0,
+      max_sends:3
+    }).select().single();
+    if(de)throw de;
+
+    document.getElementById('pf2').style.width='100%';
+    crid=r.id;
+    // FIX: construction du lien via getBaseUrl()
+    clink=getBaseUrl()+'?react='+r.id;
+    document.getElementById('ld').textContent=clink;
+    document.getElementById('upr').style.display='none';
+    btn.disabled=false;btn.textContent='Générer mon lien React →';
+    goPage('page-link');T('React créée !');
+  }catch(err){
+    T('Erreur : '+(err.message||'Upload échoué'),false);
+    btn.disabled=false;btn.textContent='Générer mon lien React →';
+    document.getElementById('upr').style.display='none';
+    document.getElementById('pf2').style.width='0%';
+  }
+}
+
+// ─── LINK ─────────────────────────────────────────────────────────────────────
+function cpLink(){
+  navigator.clipboard.writeText(clink).then(()=>{
+    const b=document.getElementById('cpb');
+    b.textContent='✓ Copié !';b.style.background='#22c55e';
+    setTimeout(()=>{b.textContent='Copier';b.style.background=''},2500);
+  }).catch(()=>prompt('Lien :',clink));
+}
+function getTxt(){return(acc||'Regarde cette vidéo et montre-moi ta vraie réaction 👀')+'\n\n'+clink}
+function shWA(){window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(getTxt()),'_blank')}
+function shSMS(){const sep=/iPad|iPhone|iPod/.test(navigator.userAgent)?'&':'?';window.open('sms:'+sep+'body='+encodeURIComponent(getTxt()),'_blank')}
+function shIG(){navigator.clipboard.writeText(clink).then(()=>alert('📋 Lien copié !\n\nOuvre Instagram et colle-le dans un message ou story.'))}
+function shEM(){window.open('mailto:?subject='+encodeURIComponent('Regarde cette vidéo !')+'&body='+encodeURIComponent(getTxt()),'_blank')}
+
+// ─── WATCH ────────────────────────────────────────────────────────────────────
+function togC(){
+  const cb=document.getElementById('ccb'),b=document.getElementById('cbtn');
+  b.style.opacity=cb.checked?'1':'.4';
+  b.style.cursor=cb.checked?'pointer':'not-allowed';
+}
+
+async function startW(){
+  if(!document.getElementById('ccb').checked)return;
+
+  const params=new URLSearchParams(location.search);
+  const rid=params.get('react');
+  // FIX: si pas de react_id dans l'URL, on affiche une erreur claire
+  if(!rid){T('Lien invalide ou expiré.',false);return}
+
+  document.getElementById('cs').style.display='none';
+  document.getElementById('dv').style.display='block';
+  document.getElementById('sw').style.display='block';
+
+  // FIX: incrémenter send_count pour suivre le nombre de visionnages
+  try{
+    const{data:react}=await sb.from('reacts').select('video_url,send_count,max_sends').eq('id',rid).single();
+    if(react?.video_url){
+      const v=document.getElementById('mv');
+      v.src=react.video_url;v.load();
+      try{await v.play()}catch(e){}
+      v.addEventListener('ended',()=>{document.getElementById('sw').style.display='block'},{once:true});
+    }
+    // Incrémenter send_count
+    const newCount=(react?.send_count||0)+1;
+    await sb.from('reacts').update({send_count:newCount}).eq('id',rid);
+  }catch(e){console.error('Erreur chargement React:',e)}
+
+  // Démarrer la caméra ET l'enregistrement MediaRecorder
+  try{
+    cam=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    document.getElementById('sv').srcObject=cam;
+
+    // FIX: enregistrement réel via MediaRecorder
+    recordedChunks=[];
+    const mimeType=MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ?'video/webm;codecs=vp9'
+      :MediaRecorder.isTypeSupported('video/webm')
+        ?'video/webm'
+        :'video/mp4';
+    mediaRecorder=new MediaRecorder(cam,{mimeType});
+    mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recordedChunks.push(e.data)};
+    mediaRecorder.start(1000); // chunk toutes les secondes
+  }catch(e){
+    document.getElementById('ce').style.display='block';
+    document.getElementById('sw').style.display='none';
+  }
+}
+
+async function stopR(){
+  // FIX: arrêter le MediaRecorder et uploader la réaction
+  document.getElementById('sw').style.display='none';
+  document.getElementById('dv').style.display='none';
+
+  const params=new URLSearchParams(location.search);
+  const rid=params.get('react');
+
+  if(mediaRecorder&&mediaRecorder.state!=='inactive'){
+    mediaRecorder.stop();
+    mediaRecorder.onstop=async()=>{
+      if(cam){cam.getTracks().forEach(t=>t.stop());cam=null}
+      if(recordedChunks.length>0&&rid){
+        try{
+          const blob=new Blob(recordedChunks,{type:recordedChunks[0].type||'video/webm'});
+          const fn='reactions/'+rid+'/'+Date.now()+'.webm';
+          const{error:ue}=await sb.storage.from('videos').upload(fn,blob,{cacheControl:'3600',upsert:false});
+          if(!ue){
+            const{data:{publicUrl}}=sb.storage.from('videos').getPublicUrl(fn);
+            // Sauvegarder la réaction en base
+            await sb.from('reactions').insert({react_id:rid,video_url:publicUrl});
+          }
+        }catch(e){console.error('Erreur upload réaction:',e)}
+      }
+      document.getElementById('fw').classList.add('show');
+      T('Réaction enregistrée !');
+    };
+  }else{
+    if(cam){cam.getTracks().forEach(t=>t.stop());cam=null}
+    document.getElementById('fw').classList.add('show');
+    T('Réaction enregistrée !');
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init(){
+  const{data:{session}}=await sb.auth.getSession();
+  if(session?.user){user=session.user;updNav(user)}
+  sb.auth.onAuthStateChange((_,s)=>{user=s?.user||null;updNav(user)});
+
+  const params=new URLSearchParams(location.search);
+  const rid=params.get('react');
+  if(rid){
+    try{
+      const{data:r}=await sb.from('reacts').select('accroche').eq('id',rid).single();
+      if(r?.accroche){
+        document.getElementById('wt').textContent=r.accroche;
+        document.getElementById('ws').textContent='📸 Ta caméra va s\'activer — montre ta vraie réaction !';
+      }
+    }catch(e){}
+    goPage('page-watch');return;
+  }
+  if(user){goDash()}
+}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
