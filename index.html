@@ -283,9 +283,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:cen
   <div class="hero">
     <p class="eyebrow">La vraie réaction. Non filtrée.</p>
     <h1>On ment<br>avec les mots.<em>Jamais avec<br>le visage.</em></h1>
-    <p class="hero-sub">Envoie une vidéo. Reçois la réaction sincère de tes proches — filmée en direct pendant qu'ils regardent.</p>
+    <p class="hero-sub">Envoie une vidéo privée. Reçois la réaction sincère de tes proches — filmée en direct pendant qu'ils regardent.</p>
     <div class="hbtns">
-      <button class="btn br" style="padding:15px 30px" onclick="goCreate()">🎬 Créer ma première React</button>
+    <button class="btn br" style="padding:15px 30px" onclick="goCreate()">🎬 Créer une React</button>
       <button class="btn bo" style="padding:15px 26px" onclick="goPage('page-plans')">Voir les plans</button>
     </div>
     <div class="tw"><div class="tt">
@@ -296,10 +296,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:cen
   <div class="sec">
     <p class="slbl">Comment ça marche</p>
     <div class="steps">
-      <div class="step"><div class="stn">01</div><h3>Tu uploades ta vidéo</h3><p>Fichier depuis ton téléphone ou ordi.</p></div>
+      <div class="step"><div class="stn">01</div><h3>Tu importes ta vidéo</h3><p>Fichier depuis ton téléphone ou ordi.</p></div>
       <div class="step"><div class="stn">02</div><h3>Tu écris ton accroche</h3><p>Un défi, une consigne personnalisée.</p></div>
-      <div class="step"><div class="stn">03</div><h3>Tu envoies le lien</h3><p>WhatsApp, SMS, Instagram, Email.</p></div>
-      <div class="step"><div class="stn">04</div><h3>Tu reçois les réactions</h3><p>Filmées en direct. Sincères. Vraies.</p></div>
+      <div class="step"><div class="stn">03</div><h3>Tu partages le lien</h3><p>WhatsApp, SMS, Instagram, Email.</p></div>
+      <div class="step"><div class="stn">04</div><h3>Tu reçois les réactions</h3><p>Filmées en direct. Privées et sécurisées.</p></div>
     </div>
   </div>
   <div class="qb"><blockquote>On ment avec les mots.<br>Jamais avec le visage.</blockquote></div>
@@ -365,7 +365,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:cen
 <div id="page-create" class="page">
   <button class="bb" onclick="goBack()">← Retour</button>
   <h2>Nouvelle React</h2>
-  <p class="sub">Configure ta vidéo en 2 minutes</p>
+    <p class="sub">Configure ta vidéo en 2 minutes, sans complexité</p>
 
   <div class="field">
     <label>Ta vidéo</label>
@@ -444,7 +444,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:cen
     <span id="ld"></span>
     <button class="cb" id="cpb" onclick="cpLink()">Copier</button>
   </div>
-  <p style="font-size:.72rem;color:var(--muted);margin-bottom:20px">Ce lien est unique. Chaque personne qui l'ouvre sera filmée.</p>
+    <p style="font-size:.72rem;color:var(--muted);margin-bottom:20px">Ce lien est unique. Chaque personne qui l'ouvre sera filmée. La vidéo et les réactions restent privées.</p>
   <div class="sg">
     <button class="sb" onclick="shWA()">📲 WhatsApp</button>
     <button class="sb" onclick="shSMS()">💬 SMS</button>
@@ -471,7 +471,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:cen
         <input type="checkbox" id="ccb" onchange="togC()">
         <label for="ccb">J'accepte d'être filmé(e) pendant la lecture de la vidéo et que ma réaction soit partagée avec l'expéditeur.</label>
       </div>
-      <button class="btn br bfull" id="cbtn" style="opacity:.4;cursor:not-allowed;padding:14px" onclick="startW()">🎬 Lancer &amp; me filmer</button>
+      <button class="btn br bfull" id="cbtn" style="opacity:.4;cursor:not-allowed;padding:14px" onclick="startW()" disabled>🎬 Lancer &amp; me filmer</button>
     </div>
   </div>
 
@@ -531,7 +531,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:cen
         <li>Export vidéos</li>
         <li>Support prioritaire</li>
       </ul>
-      <button class="pbtn" style="background:#fff;color:var(--red)" onclick="T('Bientôt disponible !')">Passer Pro →</button>
+      <button class="pbtn" style="background:#fff;color:var(--red)" onclick="enableProPlan()">Activer Pro →</button>
     </div>
     <div class="pc">
       <h3>Business</h3>
@@ -621,6 +621,47 @@ function updNav(u) {
   }
 }
 
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function isProUser() {
+  return Boolean(user?.user_metadata?.plan === 'pro');
+}
+
+async function enableProPlan() {
+  if (!user) {
+    T('Crée un compte pour activer le plan Pro.', false);
+    goSignup();
+    return;
+  }
+  const { error } = await sb.auth.updateUser({ data: { ...(user.user_metadata || {}), plan: 'pro' } });
+  if (error) return T('Impossible d’activer Pro maintenant.', false);
+  const { data: { user: freshUser } } = await sb.auth.getUser();
+  user = freshUser || user;
+  updNav(user);
+  T('Plan Pro activé ✅');
+  goCreate();
+}
+
+async function getPlayableVideoUrl(pathOrUrl, expiresIn = 60 * 60 * 24) {
+  if (!pathOrUrl) return null;
+  // Compatibilité avec les anciennes données qui stockaient déjà une URL publique.
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+
+  const { data, error } = await sb.storage.from('videos').createSignedUrl(pathOrUrl, expiresIn);
+  if (error) {
+    console.error('Signed URL error:', error);
+    return null;
+  }
+  return data?.signedUrl || null;
+}
+
 // ══════════════════════════════════════════
 //  TOAST
 // ══════════════════════════════════════════
@@ -669,21 +710,37 @@ async function loadDash() {
   rl.innerHTML = '<div class="spin-w"><div class="spinner"></div></div>';
 
   // Récupère les reacts de l'utilisateur connecté
-  const { data: reacts, error } = await sb.from('reacts')
-    .select('id, accroche, theme, created_at, send_count')
+  let { data: reacts, error } = await sb.from('reacts')
+    .select('id, accroche, theme, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  if (error) { rl.innerHTML = '<div class="es"><p>Erreur de chargement.</p></div>'; return; }
+  // Fallback schéma minimal pour éviter de bloquer l'accueil si une colonne manque.
+  if (error) {
+    const fallback = await sb.from('reacts')
+      .select('id, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    reacts = fallback.data || [];
+    error = fallback.error;
+  }
+
+  if (error) {
+    rl.innerHTML = `<div class="es"><div class="ei">⚠️</div><p>Impossible de charger tes Reacts.<br>Tu peux quand même en créer une nouvelle.</p></div>`;
+    T('Erreur dashboard : ' + (error.message || 'chargement impossible'), false);
+    return;
+  }
 
   // Quota mensuel
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const thisMonth = (reacts || []).filter(r => r.created_at >= monthStart).length;
-  const maxR = 2; // FREE
+  const maxR = isProUser() ? 9999 : 2; // PRO pratiquement illimité côté UI
   document.getElementById('qu').textContent = thisMonth;
-  document.getElementById('qm').textContent = maxR;
-  document.getElementById('qf').style.width = Math.min(100, (thisMonth / maxR) * 100) + '%';
+  document.getElementById('qm').textContent = isProUser() ? '∞' : maxR;
+  document.getElementById('qf').style.width = isProUser() ? '0%' : Math.min(100, (thisMonth / maxR) * 100) + '%';
+  document.getElementById('dpb').textContent = isProUser() ? 'PRO' : 'FREE';
+  document.getElementById('dpb').className = 'pb ' + (isProUser() ? 'pro' : 'pf');
 
   if (!reacts || reacts.length === 0) {
     rl.innerHTML = `<div class="es"><div class="ei">🎬</div><p>Aucune React pour l'instant.<br>Crée ta première !</p></div>`;
@@ -707,8 +764,8 @@ async function loadDash() {
     return `<div class="ri" onclick="openReactDetail('${r.id}')">
       <div class="rth">${emoji}</div>
       <div class="rin">
-        <strong>${r.accroche || 'Sans accroche'}</strong>
-        <span>${new Date(r.created_at).toLocaleDateString('fr-FR')} · ${r.send_count || 0} vue${(r.send_count||0)>1?'s':''}</span>
+        <strong>${escapeHtml(r.accroche || 'Sans accroche')}</strong>
+        <span>${new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
       </div>
       <div class="rc"><strong>${nb}</strong>réaction${nb > 1 ? 's' : ''}</div>
     </div>`;
@@ -733,7 +790,7 @@ async function openReactDetail(reactId) {
   if (react) {
     document.getElementById('rd-title').textContent = react.accroche || 'Réactions reçues';
     document.getElementById('rd-meta').textContent =
-      `Créée le ${new Date(react.created_at).toLocaleDateString('fr-FR')} · ${react.send_count || 0} vue(s) · Lien : ${currentReactLink}`;
+      `Créée le ${new Date(react.created_at).toLocaleDateString('fr-FR')} · Lien : ${currentReactLink}`;
   }
 
   // Fetch reactions
@@ -748,26 +805,29 @@ async function openReactDetail(reactId) {
     return;
   }
 
-  container.innerHTML = reactions.map((rx, i) => {
+  const mapped = await Promise.all(reactions.map(async (rx, i) => {
+    const reactionVideo = await getPlayableVideoUrl(rx.video_url, 60 * 60 * 12);
     // Answers (questionnaire)
     let qaHtml = '';
     if (rx.answers && Array.isArray(rx.answers) && rx.answers.length > 0) {
-      qaHtml = rx.answers.map(a => `
+      const answers = await Promise.all(rx.answers.map(async (a) => ({ ...a, signedUrl: await getPlayableVideoUrl(a.video_url, 60 * 60 * 12) })));
+      qaHtml = answers.map(a => `
         <div class="qa-block">
-          <div class="qa-q">${a.question}</div>
-          ${a.video_url ? `<button class="reaction-play" onclick="openVModal('${a.video_url}')">▶ Voir réponse</button>` : '<span style="font-size:.75rem;color:var(--muted)">Sautée</span>'}
+          <div class="qa-q">${escapeHtml(a.question)}</div>
+          ${a.signedUrl ? `<button class="reaction-play" onclick="openVModal('${a.signedUrl}')">▶ Voir réponse</button>` : '<span style="font-size:.75rem;color:var(--muted)">Sautée</span>'}
         </div>`).join('');
     }
     return `<div class="reaction-item">
-      <video class="reaction-thumb" src="${rx.video_url}" onclick="openVModal('${rx.video_url}')" title="Voir la réaction"></video>
+      <video class="reaction-thumb" src="${reactionVideo || ''}" onclick="openVModal('${reactionVideo || ''}')" title="Voir la réaction"></video>
       <div class="reaction-info">
         <strong>Réaction #${i + 1}</strong>
-        <span>${new Date(rx.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
+        <span>${new Date(rx.created_at).toLocaleString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
         ${qaHtml}
       </div>
-      <button class="reaction-play" onclick="openVModal('${rx.video_url}')">▶ Voir</button>
+      <button class="reaction-play" onclick="openVModal('${reactionVideo || ''}')">▶ Voir</button>
     </div>`;
-  }).join('');
+  }));
+  container.innerHTML = mapped.join('');
 }
 
 function cpRDetail() {
@@ -785,6 +845,7 @@ function shWADetail() {
 //  VIDEO MODAL
 // ══════════════════════════════════════════
 function openVModal(url) {
+  if (!url) return T('Vidéo indisponible pour le moment.', false);
   const vid = document.getElementById('modal-vid');
   vid.src = url;
   vid.load();
@@ -827,8 +888,7 @@ function resetCreate() {
 }
 
 function checkProQuiz() {
-  // À connecter à ton système de plans. Pour l'instant: toujours affiché, désactivé si FREE
-  const isPro = false; // TODO: lire depuis user metadata ou table profiles
+  const isPro = isProUser();
   const toggle = document.getElementById('quiz-toggle');
   const badge = document.getElementById('quiz-pro-badge');
   if (!isPro) {
@@ -840,7 +900,14 @@ function checkProQuiz() {
   } else {
     toggle.style.opacity = '1';
     toggle.style.cursor = 'pointer';
+    badge.style.background = 'var(--red)';
+    badge.style.color = '#fff';
     toggle.onclick = toggleQuiz;
+  }
+  if (!isPro && quizEnabled) {
+    quizEnabled = false;
+    document.getElementById('quiz-switch').classList.remove('on');
+    document.getElementById('quiz-builder').classList.remove('show');
   }
 }
 
@@ -911,7 +978,7 @@ async function genLink() {
     acc = document.getElementById('acc').value.trim();
     const theme = document.querySelector('#theme-pills .pill.active')?.textContent || '';
     const ext = vfile.name.split('.').pop().toLowerCase();
-    const fn = user.id + '/' + Date.now() + '.' + ext;
+    const fn = user.id + '/reacts/' + Date.now() + '.' + ext;
 
     document.getElementById('upr').style.display = 'block';
     document.getElementById('pf2').style.width = '15%';
@@ -923,22 +990,27 @@ async function genLink() {
     document.getElementById('pf2').style.width = '65%';
     document.getElementById('upr-label').textContent = 'Création de ta React...';
 
-    const { data: { publicUrl } } = sb.storage.from('videos').getPublicUrl(fn);
-
     const insertData = {
       user_id: user.id,
-      video_url: publicUrl,
+      video_url: fn,
       accroche: acc,
-      theme,
-      send_count: 0,
-      max_sends: 100
+      theme
     };
     if (quizEnabled && questions.length > 0) {
       insertData.questions = questions;
     }
 
-    const { data: r, error: de } = await sb.from('reacts').insert(insertData).select().single();
+    const { error: de } = await sb.from('reacts').insert(insertData);
     if (de) throw de;
+
+    const { data: r, error: re } = await sb.from('reacts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('video_url', fn)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (re || !r?.id) throw (re || new Error('React créée mais identifiant introuvable.'));
 
     document.getElementById('pf2').style.width = '100%';
     crid = r.id;
@@ -978,6 +1050,7 @@ function shEM()  { window.open('mailto:?subject=' + encodeURIComponent('Regarde 
 function togC() {
   const checked = document.getElementById('ccb').checked;
   const btn = document.getElementById('cbtn');
+  btn.disabled = !checked;
   btn.style.opacity = checked ? '1' : '.4';
   btn.style.cursor = checked ? 'pointer' : 'not-allowed';
 }
@@ -998,25 +1071,30 @@ async function startW() {
   document.getElementById('dv').style.display = 'block';
 
   try {
-    const { data: react } = await sb.from('reacts')
-      .select('video_url, send_count, questions, accroche')
+      const { data: react } = await sb.from('reacts')
+      .select('video_url, questions, accroche')
       .eq('id', rid).single();
 
     currentWatchReact = react;
 
     if (react?.video_url) {
       const v = document.getElementById('mv');
-      v.src = react.video_url; v.load();
+      const watchVideoUrl = await getPlayableVideoUrl(react.video_url, 60 * 60 * 2);
+      if (!watchVideoUrl) throw new Error('video_unavailable');
+      v.src = watchVideoUrl; v.load();
       try { await v.play(); } catch (e) {}
       v.addEventListener('ended', () => {
         document.getElementById('sw').style.display = 'block';
       }, { once: true });
     }
 
-    // Incrémenter send_count
-    await sb.from('reacts').update({ send_count: (react?.send_count || 0) + 1 }).eq('id', rid);
-
-  } catch (e) { console.error('Erreur chargement React:', e); }
+  } catch (e) {
+    console.error('Erreur chargement React:', e);
+    document.getElementById('dv').style.display = 'none';
+    document.getElementById('cs').style.display = 'block';
+    T('Impossible de charger la vidéo. Le lien est peut-être expiré.', false);
+    return;
+  }
 
   // Démarrer caméra
   try {
@@ -1052,11 +1130,10 @@ async function stopR() {
       if (recordedChunks.length > 0 && rid) {
         try {
           const blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type || 'video/webm' });
-          const fn = 'reactions/' + rid + '/' + Date.now() + '.webm';
+          const fn = user?.id ? (user.id + '/reactions/' + rid + '/' + Date.now() + '.webm') : ('public/reactions/' + rid + '/' + Date.now() + '.webm');
           const { error: ue } = await sb.storage.from('videos').upload(fn, blob, { cacheControl: '3600', upsert: false });
           if (!ue) {
-            const { data: { publicUrl } } = sb.storage.from('videos').getPublicUrl(fn);
-            reactionUrl = publicUrl;
+            reactionUrl = fn;
           }
         } catch (e) { console.error('Erreur upload réaction:', e); }
       }
@@ -1114,7 +1191,7 @@ async function startQuiz(qs, rid, rxId) {
     <div class="quiz-step${i === 0 ? ' active' : ''}" id="qs-step-${i}">
       <div class="qs-header">
         <div class="qs-counter">Question ${i + 1} / ${qs.length}</div>
-        <div class="qs-q">${q}</div>
+        <div class="qs-q">${escapeHtml(q)}</div>
         <div class="qs-hint">Réponds en vidéo ci-dessous</div>
       </div>
       <div class="qs-cam" id="qs-cam-${i}">
@@ -1123,7 +1200,7 @@ async function startQuiz(qs, rid, rxId) {
         <div class="qs-timer" id="qs-timer-${i}">0:00</div>
       </div>
       <div class="qs-btns">
-        <button class="qs-btns qs-skip" onclick="quizSkip(${i})" style="flex:1;padding:13px;background:var(--g2);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:.88rem;cursor:pointer">Passer →</button>
+        <button class="qs-skip" onclick="quizSkip(${i})" style="flex:1;padding:13px;background:var(--g2);color:var(--muted);border:none;font-family:'DM Sans',sans-serif;font-size:.88rem;cursor:pointer">Passer →</button>
         <button class="qs-next" onclick="quizNext(${i})" style="flex:2;padding:13px;background:var(--red);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer">✓ Valider & suivant</button>
       </div>
     </div>`).join('');
@@ -1186,11 +1263,10 @@ async function quizNext(i) {
   if (quizStepChunks.length > 0 && quizReactId) {
     try {
       const blob = new Blob(quizStepChunks, { type: quizStepChunks[0]?.type || 'video/webm' });
-      const fn = 'quiz/' + quizReactId + '/' + Date.now() + '_q' + i + '.webm';
+      const fn = user?.id ? (user.id + '/quiz/' + quizReactId + '/' + Date.now() + '_q' + i + '.webm') : ('public/quiz/' + quizReactId + '/' + Date.now() + '_q' + i + '.webm');
       const { error: ue } = await sb.storage.from('videos').upload(fn, blob, { cacheControl: '3600', upsert: false });
       if (!ue) {
-        const { data: { publicUrl } } = sb.storage.from('videos').getPublicUrl(fn);
-        quizAnswers[i].video_url = publicUrl;
+        quizAnswers[i].video_url = fn;
       }
     } catch (e) { console.error('Erreur upload quiz:', e); }
   }
