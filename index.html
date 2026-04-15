@@ -1017,6 +1017,17 @@ async function genLink() {
     }
 
     if (de || !r?.id) throw (de || new Error('React créée mais identifiant introuvable.'));
+    const { error: de } = await sb.from('reacts').insert(insertData);
+    if (de) throw de;
+
+    const { data: r, error: re } = await sb.from('reacts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('video_url', fn)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (re || !r?.id) throw (re || new Error('React créée mais identifiant introuvable.'));
 
     document.getElementById('pf2').style.width = '100%';
     crid = r.id;
@@ -1078,6 +1089,7 @@ async function startW() {
 
   try {
       let { data: react, error: reactErr } = await sb.from('reacts')
+      const { data: react } = await sb.from('reacts')
       .select('video_url, questions, accroche')
       .eq('id', rid).single();
 
