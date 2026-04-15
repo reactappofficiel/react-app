@@ -630,6 +630,11 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function isMissingColumnError(error, columnName) {
+  const msg = String(error?.message || '').toLowerCase();
+  return msg.includes('column') && msg.includes(String(columnName).toLowerCase());
+}
+
 function isProUser() {
   return Boolean(user?.user_metadata?.plan === 'pro');
 }
@@ -1000,6 +1005,18 @@ async function genLink() {
       insertData.questions = questions;
     }
 
+    let { data: r, error: de } = await sb.from('reacts').insert(insertData).select('id').single();
+
+    // Compatibilité si la colonne est "video" au lieu de "video_url" dans le schéma.
+    if (de && isMissingColumnError(de, 'video_url')) {
+      const fallbackInsertData = { ...insertData, video: fn };
+      delete fallbackInsertData.video_url;
+      const retry = await sb.from('reacts').insert(fallbackInsertData).select('id').single();
+      r = retry.data;
+      de = retry.error;
+    }
+
+    if (de || !r?.id) throw (de || new Error('React créée mais identifiant introuvable.'));
     const { error: de } = await sb.from('reacts').insert(insertData);
     if (de) throw de;
 
@@ -1071,9 +1088,19 @@ async function startW() {
   document.getElementById('dv').style.display = 'block';
 
   try {
+      let { data: react, error: reactErr } = await sb.from('reacts')
       const { data: react } = await sb.from('reacts')
       .select('video_url, questions, accroche')
       .eq('id', rid).single();
+
+      if (reactErr && isMissingColumnError(reactErr, 'video_url')) {
+        const fallback = await sb.from('reacts')
+          .select('video, questions, accroche')
+          .eq('id', rid).single();
+        react = fallback.data ? { ...fallback.data, video_url: fallback.data.video } : null;
+        reactErr = fallback.error;
+      }
+      if (reactErr) throw reactErr;
 
     currentWatchReact = react;
 
