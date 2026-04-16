@@ -1017,22 +1017,22 @@ async function genLink() {
     }
 
     if (de || !r?.id) throw (de || new Error('React créée mais identifiant introuvable.'));
-    const { error: de } = await sb.from('reacts').insert(insertData);
-    if (de) throw de;
-
-    const { data: r, error: re } = await sb.from('reacts')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('video_url', fn)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (re || !r?.id) throw (re || new Error('React créée mais identifiant introuvable.'));
 
     document.getElementById('pf2').style.width = '100%';
     crid = r.id;
     clink = getBaseUrl() + '?react=' + r.id;
     document.getElementById('ld').textContent = clink;
+    document.getElementById('upr').style.display = 'none';
+    btn.disabled = false; btn.textContent = 'Générer mon lien React →';
+    goPage('page-link');
+    T('React créée !');
+  } catch (err) {
+    T('Erreur : ' + (err.message || 'Upload échoué'), false);
+    btn.disabled = false; btn.textContent = 'Générer mon lien React →';
+    document.getElementById('upr').style.display = 'none';
+    document.getElementById('pf2').style.width = '0%';
+  }
+}
     document.getElementById('upr').style.display = 'none';
     btn.disabled = false; btn.textContent = 'Générer mon lien React →';
     goPage('page-link');
@@ -1066,17 +1066,6 @@ function shEM()  { window.open('mailto:?subject=' + encodeURIComponent('Regarde 
 // ══════════════════════════════════════════
 function togC() {
   const checked = document.getElementById('ccb').checked;
-  const btn = document.getElementById('cbtn');
-  btn.disabled = !checked;
-  btn.style.opacity = checked ? '1' : '.4';
-  btn.style.cursor = checked ? 'pointer' : 'not-allowed';
-}
-
-// ══════════════════════════════════════════
-//  WATCH — MAIN REACTION
-// ══════════════════════════════════════════
-let currentWatchReact = null;
-
 async function startW() {
   if (!document.getElementById('ccb').checked) return;
 
@@ -1088,19 +1077,18 @@ async function startW() {
   document.getElementById('dv').style.display = 'block';
 
   try {
-      let { data: react, error: reactErr } = await sb.from('reacts')
-      const { data: react } = await sb.from('reacts')
+    let { data: react, error: reactErr } = await sb.from('reacts')
       .select('video_url, questions, accroche')
       .eq('id', rid).single();
 
-      if (reactErr && isMissingColumnError(reactErr, 'video_url')) {
-        const fallback = await sb.from('reacts')
-          .select('video, questions, accroche')
-          .eq('id', rid).single();
-        react = fallback.data ? { ...fallback.data, video_url: fallback.data.video } : null;
-        reactErr = fallback.error;
-      }
-      if (reactErr) throw reactErr;
+    if (reactErr && isMissingColumnError(reactErr, 'video_url')) {
+      const fallback = await sb.from('reacts')
+        .select('video, questions, accroche')
+        .eq('id', rid).single();
+      react = fallback.data ? { ...fallback.data, video_url: fallback.data.video } : null;
+      reactErr = fallback.error;
+    }
+    if (reactErr) throw reactErr;
 
     currentWatchReact = react;
 
@@ -1128,6 +1116,18 @@ async function startW() {
     cam = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     document.getElementById('sv').srcObject = cam;
 
+    recordedChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9'
+      : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
+    mediaRecorder = new MediaRecorder(cam, { mimeType });
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.start(1000);
+  } catch (e) {
+    document.getElementById('ce').style.display = 'block';
+    document.getElementById('sw').style.display = 'none';
+  }
+}
     recordedChunks = [];
     const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
       ? 'video/webm;codecs=vp9'
